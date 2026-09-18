@@ -568,6 +568,7 @@ export function Explorer() {
       : undefined;
 
   const dayPlan = getDayPlan(filters.itinerary);
+  const dayMode = saturdayMode || Boolean(dayPlan);
 
   const dayPlanRoute = useMemo(() => {
     if (!dayPlan) return null;
@@ -599,7 +600,7 @@ export function Explorer() {
               <h1 className="font-heading mt-1 text-3xl leading-none md:text-4xl">
                 Journées du patrimoine à Lyon
               </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-2 hidden max-w-2xl text-sm leading-relaxed text-muted-foreground md:block">
                 {stats.gratuit} lieux gratuits recensés dans le programme officiel. Affluence et notes
                 d&apos;intérêt sont des estimations pour composer un week-end tenable. Samedi : crématorium,
                 Villa Berliet, orgue à 18h. Dimanche : Lugdunum le matin, Guignol et Gadagne l&apos;après-midi.
@@ -667,7 +668,7 @@ export function Explorer() {
         </div>
       </header>
 
-      <div className="mx-auto grid min-h-0 w-full max-w-[1600px] flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[minmax(320px,400px)_1fr] xl:grid-cols-[380px_1fr_360px]">
+      <div className="mx-auto grid min-h-0 w-full max-w-[1600px] flex-1 grid-cols-1 lg:grid-cols-[minmax(320px,400px)_1fr] lg:overflow-hidden xl:grid-cols-[380px_1fr_360px]">
         <aside className="hidden min-h-0 flex-col overflow-hidden border-r border-border lg:flex">
           <div className="flex shrink-0 items-center justify-between gap-2 px-4 py-3">
             <p className="text-sm">
@@ -718,7 +719,11 @@ export function Explorer() {
           </div>
         </aside>
 
-        <section className="relative h-[55vh] min-h-[420px] min-w-0 overflow-hidden lg:h-auto lg:min-h-0">
+        <section
+          className={`relative min-w-0 overflow-hidden lg:h-auto lg:max-h-none lg:min-h-0 ${
+            dayMode ? "h-[38vh] max-h-[280px] min-h-[240px]" : "h-[55vh] min-h-[420px]"
+          }`}
+        >
           <div className="absolute inset-0">
             <MapView
               places={filtered}
@@ -746,14 +751,14 @@ export function Explorer() {
                   <Filter />
                   Liste ({filtered.length})
                 </SheetTrigger>
-                <SheetContent side="bottom" className="h-[80dvh]">
+                <SheetContent side="bottom" className="flex h-[80dvh] flex-col gap-0 overflow-hidden">
                   <SheetHeader>
                     <SheetTitle>Lieux filtrés</SheetTitle>
                     <SheetDescription>
                       {filtered.length} résultats · {filters.scope === "lyon" ? "Lyon" : "Métropole"}
                     </SheetDescription>
                   </SheetHeader>
-                  <div className="overflow-y-auto px-4 pb-6">
+                  <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
                     <FiltersForm
                       filters={filters}
                       setFilters={setFilters}
@@ -764,29 +769,6 @@ export function Explorer() {
                       <SortSelect value={sort} onChange={setSort} />
                     </div>
                     <div className="mt-4">
-                      {saturdayMode ? (
-                        <div className="mb-5">
-                          <SaturdayPlanPanel
-                            result={saturdayPlan}
-                            selectedId={selectedId}
-                            onSelectPlace={(id) => {
-                              setSelectedId(id);
-                              setMobileList(false);
-                            }}
-                          />
-                        </div>
-                      ) : dayPlan ? (
-                        <div className="mb-5">
-                          <DayPlanPanel
-                            plan={dayPlan}
-                            selectedId={selectedId}
-                            onSelect={(id) => {
-                              setSelectedId(id);
-                              setMobileList(false);
-                            }}
-                          />
-                        </div>
-                      ) : null}
                       <PlaceList
                         places={filtered}
                         sort={saturdayMode || dayPlan ? "interest" : sort}
@@ -805,16 +787,21 @@ export function Explorer() {
               </Sheet>
             </div>
           </div>
-          {saturdayMode && activeSaturday ? (
-            <div className="pointer-events-auto absolute inset-x-3 bottom-3 z-[500] rounded-xl border border-border bg-card/95 p-3 text-sm shadow-sm backdrop-blur lg:hidden">
-              {activeSaturday.label} · {activeSaturday.start}–{activeSaturday.end}
-            </div>
-          ) : filters.itinerary ? (
-            <div className="pointer-events-auto absolute inset-x-3 bottom-3 z-[500] rounded-xl border border-border bg-card/95 p-3 text-sm shadow-sm backdrop-blur lg:hidden">
-              {ITINERARIES.find((i) => i.id === filters.itinerary)?.blurb}
-            </div>
-          ) : null}
         </section>
+
+        {dayMode ? (
+          <div className="border-t border-border bg-background px-4 py-5 lg:hidden">
+            {saturdayMode ? (
+              <SaturdayPlanPanel
+                result={saturdayPlan}
+                selectedId={selectedId}
+                onSelectPlace={setSelectedId}
+              />
+            ) : dayPlan ? (
+              <DayPlanPanel plan={dayPlan} selectedId={selectedId} onSelect={setSelectedId} />
+            ) : null}
+          </div>
+        ) : null}
 
         <aside className="hidden min-h-0 overflow-y-auto border-l border-border xl:block">
           <div className="p-5">
@@ -864,7 +851,7 @@ export function Explorer() {
       </div>
 
       {selected ? (
-        <div className="shrink-0 border-t border-border bg-card xl:hidden">
+        <div className="sticky bottom-0 z-20 shrink-0 border-t border-border bg-card xl:hidden">
           <div className="mx-auto flex max-w-[1600px] items-start justify-between gap-3 px-4 py-3">
             <div className="min-w-0">
               <p className="truncate font-heading text-lg">{selected.name}</p>
